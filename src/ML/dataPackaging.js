@@ -182,10 +182,6 @@ export const train = async (data, offset = 10) => {
 
     //define input and output
    
-    const output=tf.layers.activation({
-        activation:'linear',
-        name:'linear_output'
-    })
     const optimizer=tf.train.adam()
 
 
@@ -222,7 +218,7 @@ export const train = async (data, offset = 10) => {
         activation:'linear',
         name:'dense_4'
     }))
-    model.add(output)
+    
     model.compile({optimizer:optimizer, loss:tf.losses.meanSquaredError, metrics: ['mse']})
     /**
      * 
