@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
@@ -66,3 +67,7 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/de
 ### `npm run build` fails to minify
 
 This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+=======
+# JAVASCRIPT-StockPricePrediction
+A tool that make use of Tensorflow.js and dozens of technical analysis method to predict stock price in the future
+>>>>>>> 86151290afdab1d7f9b0700734f7d7a47588c2bb
