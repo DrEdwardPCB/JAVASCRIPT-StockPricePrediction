@@ -8,14 +8,21 @@ import { MFI } from '../technicalAnalysis/MFI';
 import * as tfvis from '@tensorflow/tfjs-vis'
 import * as tf from '@tensorflow/tfjs';
 import _ from 'lodash';
-import { buildModel } from './model'
 
-const offset=10
-const window=50
-export const train = async (data, offset = 10) => {
+const offsetC=10
+const windowC=20
+/**
+ * pass in data set as an object, automatically train and predict the model return the array of prediction result
+ * @param {object} data 
+ * @param {function} callback 
+ * @param {number} offset
+ * @param {number} window
+ */
+export const train = async (data,callback, offset=offsetC, window=windowC) => {
 
     tfvis.visor()
-    tfvis.visor().surface({ name: 'My First Surface', tab: 'Input Data' });
+    tf.setBackend('webgl')
+    console.log(tf.getBackend());
 
     const indexOfNP = data.dataset.column_names.indexOf('Nominal Price')
     const indexOfHigh = data.dataset.column_names.indexOf('High')
@@ -52,7 +59,6 @@ export const train = async (data, offset = 10) => {
     const rsi = RSI(NpArray).slice(250)
     const crsi = CulterRSI(NpArray).slice(250)
     const so = StochasticOscillator(NpArray).slice(250)
-    console.log(so)
     const roc = ROC(NpArray).slice(250)
     const mfi = MFI(NpArray).slice(250)
 
@@ -61,7 +67,7 @@ export const train = async (data, offset = 10) => {
     const tLarr = LowArray.slice(250)
     const tPCarr = PCArray.slice(250)
 
-    //inputData.slice(0,200)
+    //organise data in a way with respect to the window, the offset and compatible with tensorflow
     var Xs = []
     var answer=[]
     
@@ -136,80 +142,68 @@ export const train = async (data, offset = 10) => {
                 isNaN(thisPos[30][ind])||thisPos[30][ind]==null||thisPos[30][ind]==undefined?0:thisPos[30][ind],
             ]
         })
-        //console.log(thatPos.length)
+       
         Xs.push(thatPos)
         answer.push(thatPos)
     }
+    //ensuring there won't be data that are too recent is fed to the training set
     Xs=_.takeRight(Xs,Xs.length-window-1)
+
+    //shuffle the data
     for (var i = Xs.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * i)
         const temp = Xs[i]
         Xs[i] = Xs[j]
         Xs[j] = temp
     }
-    console.log(Xs)
-    //console.log(Xs.length, Xs[0].length, Xs[0][0].length)
+    
+    //preparing Ys for fitting the model
     var Ys = Xs.map((e) => {//there will be 200 time step 30 feature for each
         //console.log(e.length)
         return e.map((f)=>{return f[30]}).filter((f,inde,rarr)=>{return inde==rarr.length-1})
     })
-    console.log(Ys)
-    /*console.log(
-        Xs.map(e => {//there will be 200 time step 30 feature for each
-            return e.map((f,inde)=>{return [
-                f[0],f[1],f[2],f[3],f[4],f[5],f[6],f[7],f[8],f[9],f[10],f[11],f[12],f[13],f[14],f[15],f[16],f[17],f[18],f[19],f[20],f[21],f[22],f[23],f[24],f[25],f[26],f[27],f[28],f[29]
-            ]})
-        }).slice(0, Math.floor(Xs.length * 0.7))
-    )*/
-    //console.log(Ys.length, Ys[0].length, Ys[0][0].length)
+    
+    //preparing Xs training set
     const realXs = tf.tensor(Xs.map(e => {//there will be 200 time step 30 feature for each
         return e.map((f,inde)=>{return [
             f[0],f[1],f[2],f[3],f[4],f[5],f[6],f[7],f[8],f[9],f[10],f[11],f[12],f[13],f[14],f[15],f[16],f[17],f[18],f[19],f[20],f[21],f[22],f[23],f[24],f[25],f[26],f[27],f[28],f[29]
         ]})
     }).slice(0, Math.floor(Xs.length * 0.7)))
+    //preparing Ys training set
     const realYs = tf.tensor(Ys.slice(0, Math.floor(Ys.length * 0.7)))
+
+    //preparing Xs validation set
     const realXsVal = tf.tensor(Xs.map(e => {//there will be 200 time step 30 feature for each
         return e.map((f,inde)=>{return [
             f[0],f[1],f[2],f[3],f[4],f[5],f[6],f[7],f[8],f[9],f[10],f[11],f[12],f[13],f[14],f[15],f[16],f[17],f[18],f[19],f[20],f[21],f[22],f[23],f[24],f[25],f[26],f[27],f[28],f[29]
         ]})
     }).slice(Math.floor(Xs.length * 0.7)))
+
+    //preparing Ys validation set
     const realYsVal = tf.tensor(Ys.slice(Math.floor(Ys.length * 0.7)))
-    realXs.print()
-    /**
-     * 
-     */
-    const model = tf.sequential()
-
-    //define input and output
-   
+    
+    //building the model
+    const model = tf.sequential()   
     const optimizer=tf.train.adam()
-
-
     //define hidden layers lstm layer
-    const lstmlayerapply = tf.layers.lstm({
+    model.add(tf.layers.lstm({
         units:window,
         name:'lstm_0',
         inputShape:[window,30],
         dropout:0.2
-    })
-    model.add(lstmlayerapply)
-    /*model.add(tf.layers.dropout({
-        units:200,
-        rate:0.2,
-        name:'lstm_dropout'
-    }))*/
-    /*model.add(tf.layers.dense({
-        units:50,
+    }))
+    model.add(tf.layers.dense({
+        units:window,
         activation:'relu',
         name:'dense_1'
-    }))*/
+    }))
     model.add(tf.layers.dense({
-        units:50,
+        units:3*window,
         activation:'relu',
         name:'dense_2'
     }))
     model.add(tf.layers.dense({
-        units:64,
+        units:Math.floor(1.5*window),
         activation:'sigmoid',
         name:'dense_3'
     }))
@@ -220,12 +214,10 @@ export const train = async (data, offset = 10) => {
     }))
     
     model.compile({optimizer:optimizer, loss:tf.losses.meanSquaredError, metrics: ['mse']})
-    /**
-     * 
-     */
-    
+   
+    //fitting the model
     await model.fit(realXs, realYs, {
-        epochs: 200,
+        epochs: 100,
         batchSize: 10,
         callbacks: tfvis.show.fitCallbacks(
             { name: 'Training Performance' },
@@ -242,11 +234,17 @@ export const train = async (data, offset = 10) => {
     const preds = model.predict(last)
     console.log(preds)
     preds.print()
+    const predsArray=preds.arraySync()
+    callback({answer: answer.map((e) => {//there will be 200 time step 30 feature for each
+        //console.log(e.length)
+        return e.map((f)=>{return f[30]}).filter((f,inde,rarr)=>{return inde==rarr.length-1})
+    }), predict:predsArray})
 
 }
+/*
 export const getData = () => {
 
 }
 export const predict = () => {
 
-}
+}*/

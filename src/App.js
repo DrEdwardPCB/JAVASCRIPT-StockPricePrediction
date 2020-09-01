@@ -32,6 +32,8 @@ function App() {
   const [Roc, setRoc] = useState()
   const [So, setSo] = useState()
   const [rawData,setRawData]=useState()
+  const [real,setReal]=useState([])
+  const [predict,setPredict]=useState([])
   const fetchData = (stid) => {
     console.log(getquantdlink(stid))
     fetch(getquantdlink(stid))
@@ -122,48 +124,6 @@ function App() {
                       fill: false,
                     },
                     //moving average
-                    {
-                      label: 's10',
-                      backgroundColor: '#0EB1D2',
-                      borderColor: '#999999',
-                      data: _.takeRight(MovingAverage.s10,100),
-                      fill: false,
-                    },
-                    {
-                      label: 's50',
-                      backgroundColor: '#709176',
-                      borderColor: '#999999',
-                      data: _.takeRight(MovingAverage.s50,100),
-                      fill: false,
-                    },
-                    {
-                      label: 's200',
-                      backgroundColor: '#E6F8B2',
-                      borderColor: '#999999',
-                      data: _.takeRight(MovingAverage.s200,100),
-                      fill: false,
-                    },
-                    {
-                      label: 'w10',
-                      backgroundColor: '#0EB1D2',
-                      borderColor: '#d0d0d0',
-                      data: _.takeRight(MovingAverage.w10,100),
-                      fill: false,
-                    },
-                    {
-                      label: 'w50',
-                      backgroundColor: '#709176',
-                      borderColor: '#d0d0d0',
-                      data: _.takeRight(MovingAverage.w50,100),
-                      fill: false,
-                    },
-                    {
-                      label: 'w200',
-                      backgroundColor: '#E6F8B2',
-                      borderColor: '#d0d0d0',
-                      data: _.takeRight(MovingAverage.w200,100),
-                      fill: false,
-                    },
                     {
                       label: 'e10',
                       backgroundColor: '#0EB1D2',
@@ -308,7 +268,70 @@ function App() {
         </Row>
         <Row>
           <Col>
-            <Button onClick={()=>{train(rawData)}}>Train model</Button>
+            <Button onClick={()=>{train(rawData,(data)=>{
+              console.log(data)
+            })}}>Train model</Button>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <div style={{ overflow: 'scroll', height: '400px' }}>
+              <ResizeableDiv width={chartWidth} height={400}>
+                <Line
+                  width={'100%'}
+                  height={'100%'}
+                  data={{
+                    labels:  _.takeRight(predict.map((e,i)=>{return i}),100),
+                    datasets: [{
+                      label: 'real',
+                      backgroundColor: '#F00000',
+                      borderColor: '#F00000',
+                      data: _.takeRight(real,100),
+                      fill: false,
+                    },
+                    {
+                      label: 'predict',
+                      backgroundColor: '#00F000',
+                      borderColor: '#00F000',
+                      data: _.takeRight(predict,100),
+                      fill: false,
+                    },
+                  ]
+                  }}
+                  options={{
+                    responsive: true,
+                    title: {
+                      display: true,
+                      text: 'Chart.js Line Chart'
+                    },
+                    tooltips: {
+                      mode: 'index',
+                      intersect: false,
+                    },
+                    hover: {
+                      mode: 'nearest',
+                      intersect: true
+                    },
+                    maintainAspectRatio: false,
+                    scales: {
+                      x: {
+                        display: true,
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Month'
+                        }
+                      },
+                      y: {
+                        display: true,
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Value'
+                        }
+                      }
+                    }
+                  }} />
+              </ResizeableDiv>
+            </div>
           </Col>
         </Row>
       </Container>
