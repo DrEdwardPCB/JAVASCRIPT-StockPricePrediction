@@ -64,7 +64,7 @@ export const CulterRSI=(inputData, day=14)=>{
         }
     })
     const upsma=SimpleMovingAverage(up,day)
-    const downsma=ExpotentialMovingAverage(down,day)
+    const downsma=SimpleMovingAverage(down,day)
     const RSI=upsma.map((e,i)=>{
         return (1-(1/(1+(e/downsma[i]))))*100
     })
