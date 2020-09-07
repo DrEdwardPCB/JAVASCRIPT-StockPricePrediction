@@ -5,7 +5,7 @@ const { RSI, CulterRSI } = require('../technicalAnalysis/RSI')
 const { StochasticOscillator } = require('../technicalAnalysis/StochasticOscillator')
 const { ROC } = require('../technicalAnalysis/ROC')
 const { MFI } = require('../technicalAnalysis/MFI')
-const tf = require('@tensorflow/tfjs-node')
+const tf = require('@tensorflow/tfjs-node-gpu')
 const _ = require('lodash')
 const { minmaxnormalize } = require('./normalization')
 
